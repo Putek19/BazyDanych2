@@ -99,8 +99,7 @@ class Transaction(db.Model):
     nazwa = Column(String(100), nullable=False)
     kwota = Column(Numeric(10, 2), nullable=False)
     data = Column(Date, default=datetime.utcnow, nullable=False)
-    zdjecie = Column(LargeBinary, nullable=True)  # JEST: Zdjęcie (BLOB)
-
+    zdjecie = Column(LargeBinary, nullable=True)
     uzytkownik = relationship("User", back_populates="transakcje")
     podbudzet = relationship("SubBudget", back_populates="transakcje")
     kategoria = relationship("Category", back_populates="transakcje")

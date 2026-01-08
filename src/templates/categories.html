@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">Nowa Kategoria</div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label>Nazwa</label>
+                        <input type="text" name="nazwa" class="form-control" placeholder="np. Lekarz" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label>Opis (opcjonalnie)</label>
+                        <input type="text" name="opis" class="form-control" placeholder="Krótki opis...">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Dodaj Uniwersalną Kategorię</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h3>Twoje Kategorie</h3>
+        <div class="row">
+            {% for c in categories %}
+            <div class="col-md-6 mb-2">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ c.nazwa }}</div>
+                                <small class="text-muted">{{ c.opis or '' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

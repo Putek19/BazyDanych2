@@ -8,6 +8,14 @@ from .models import User, Household, HouseholdMember, SubBudget, Category, Trans
 bp = Blueprint("main", __name__)
 
 
+@bp.context_processor
+def inject_user():
+    user = None
+    if "user_id" in session:
+        user = db.session.get(User, session["user_id"])
+    return dict(current_user=user)
+
+
 # Pomocnik: pobierz aktualnie zalogowanego usera
 def get_current_user():
     if "user_id" in session:
@@ -200,3 +208,62 @@ def login():
 def logout():
     session.pop("user_id", None)
     return redirect(url_for("main.login"))
+
+
+@bp.route("/history")
+def history():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("main.login"))
+
+    # Pobierz ID gospodarstwa
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+
+    # Pobierz WSZYSTKIE transakcje, sortuj od najnowszych
+    all_transactions = (
+        Transaction.query.filter(
+            Transaction.podbudzet.has(id_gospodarstwa=member.id_gospodarstwa)
+        )
+        .order_by(Transaction.data.desc())
+        .all()
+    )
+
+    return render_template("history.html", transakcje=all_transactions)
+
+
+@bp.route("/categories", methods=["GET", "POST"])
+def categories():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("main.login"))
+
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+
+    if request.method == "POST":
+        nazwa = request.form.get("nazwa")
+        opis = request.form.get("opis")
+
+        # ZMIANA: Nie pobieramy typu z formularza.
+        # Ustawiamy na sztywno "Ogólna", żeby pasowała do wszystkiego.
+        typ = "Ogólna"
+
+        # Sprawdź czy taka już nie istnieje
+        exists = Category.query.filter_by(
+            id_gospodarstwa=member.id_gospodarstwa, nazwa=nazwa
+        ).first()
+
+        if not exists:
+            new_cat = Category(
+                id_gospodarstwa=member.id_gospodarstwa, nazwa=nazwa, opis=opis, typ=typ
+            )
+            db.session.add(new_cat)
+            db.session.commit()
+            flash(f"Dodano kategorię: {nazwa}")
+        else:
+            flash("Taka kategoria już istnieje!")
+
+        return redirect(url_for("main.categories"))
+
+    # Wyświetlanie listy
+    cats = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+    return render_template("categories.html", categories=cats)
