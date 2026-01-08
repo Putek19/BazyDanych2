@@ -169,8 +169,7 @@ def register():
         )
         db.session.add(member)
 
-        # --- NOWOŚĆ: AUTOMATYCZNE TWORZENIE DANYCH STARTOWYCH ---
-        # Żebyś nie musiał ręcznie odpalać seed_data.py dla każdego nowego usera
+        # --- AUTOMATYCZNE TWORZENIE DANYCH STARTOWYCH ---
 
         # A. Domyślny portfel
         wallet = SubBudget(
@@ -256,9 +255,12 @@ def categories():
         nazwa = request.form.get("nazwa")
         opis = request.form.get("opis")
 
-        # ZMIANA: Nie pobieramy typu z formularza.
-        # Ustawiamy na sztywno "Ogólna", żeby pasowała do wszystkiego.
-        typ = "Ogólna"
+        # ZMIANA 1: Pobieramy typ z ukrytego pola formularza (HTML poniżej to wyśle)
+        typ = request.form.get("typ")
+
+        # jeżeli nie ma ustalonego typu -> nadaj typ
+        if not typ:
+            typ = "Wydatek"
 
         # Sprawdź czy taka już nie istnieje
         exists = Category.query.filter_by(
@@ -277,9 +279,12 @@ def categories():
 
         return redirect(url_for("main.categories"))
 
-    # Wyświetlanie listy
-    cats = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
-    return render_template("categories.html", categories=cats)
+    # ZMIANA 2: Pobieramy dwie osobne listy zamiast jednej
+    cats_wydatki = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa, typ="Wydatek").all()
+    cats_wplywy = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa, typ="Wplyw").all()
+
+    # Przekazanie do szablonu dwóch list zależnych od typu kategorii
+    return render_template("categories.html", wydatki=cats_wydatki, wplywy=cats_wplywy)
 
 
 def send_reset_email(user):
