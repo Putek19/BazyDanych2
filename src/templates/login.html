@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-4 mx-auto" style="max-width: 400px;">
+    <h3 class="text-center">Logowanie</h3>
+    <form method="POST">
+        <div class="mb-3"><input type="email" name="email" class="form-control" placeholder="Email" required></div>
+        <div class="mb-3"><input type="password" name="password" class="form-control" placeholder="Hasło" required></div>
+        <button type="submit" class="btn btn-primary w-100">Wejdź</button>
+    </form>
+</div>
+{% endblock %}

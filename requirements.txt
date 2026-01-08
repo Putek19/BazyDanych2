@@ -1,0 +1,5 @@
+Flask
+Flask-SQLAlchemy
+oracledb
+python-dotenv
+werkzeug

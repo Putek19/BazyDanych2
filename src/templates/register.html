@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-4 mx-auto" style="max-width: 500px;">
+    <h3 class="text-center">Rejestracja</h3>
+    <form method="POST">
+        <div class="mb-3"><input type="text" name="name" class="form-control" placeholder="Imię" required></div>
+        <div class="mb-3"><input type="email" name="email" class="form-control" placeholder="Email" required></div>
+        <div class="mb-3"><input type="password" name="password" class="form-control" placeholder="Hasło" required></div>
+        <div class="mb-3"><input type="text" name="household_name" class="form-control" placeholder="Nazwa Domu (np. Dom Nowaków)" required></div>
+        <button type="submit" class="btn btn-success w-100">Załóż konto</button>
+    </form>
+</div>
+{% endblock %}
