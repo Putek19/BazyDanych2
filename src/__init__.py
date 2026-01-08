@@ -12,7 +12,7 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
-    mail.init_app(app)  
+    mail.init_app(app)
 
     from . import models
     from . import routes

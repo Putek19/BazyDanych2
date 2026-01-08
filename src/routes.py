@@ -148,7 +148,7 @@ def register():
         new_user = User(
             email=email,
             nazwa_uzytkownika=name,
-            haslo_hash=generate_password_hash(password),
+            haslo_hash = generate_password_hash(password, method='pbkdf2:sha256')
         )
         db.session.add(new_user)
         db.session.flush()
