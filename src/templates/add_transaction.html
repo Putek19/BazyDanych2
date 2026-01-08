@@ -27,7 +27,7 @@
             <div class="mb-3">
                 <label>Kategoria</label>
                 <select name="kategoria" id="select-kategoria" class="form-select" required>
-                    </select>
+                </select>
             </div>
 
             <div class="mb-3">
@@ -49,8 +49,8 @@
     // JS odpowiedzialny za filtrowanie kategorii zależnie od wybranego typu: "Wydatek" lub "Wpływ"
     const wszystkieKategorie = [
         {% for c in categories %}
-            { id: "{{ c.id }}", nazwa: "{{ c.nazwa }}", typ: "{{ c.typ }}" },
-        {% endfor %}
+    { id: "{{ c.id }}", nazwa: "{{ c.nazwa }}", typ: "{{ c.typ }}" },
+    {% endfor %}
     ];
 
     function aktualizujKategorie() {
@@ -84,24 +84,24 @@
 
 
 
-document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
 
-    // Pobranie parametru z adresu url
-    const params = new URLSearchParams(window.location.search);
-    const parametrTyp = params.get('typ');
+        // Pobranie parametru z adresu url
+        const params = new URLSearchParams(window.location.search);
+        const parametrTyp = params.get('typ');
 
-    // Jeśli parametr istnieje, spróbuj ustawić go w selectcie
-    if (parametrTyp) {
-        const selectTyp = document.getElementById('select-typ');
+        // Jeśli parametr istnieje, spróbuj ustawić go w selectcie
+        if (parametrTyp) {
+            const selectTyp = document.getElementById('select-typ');
 
-        // Szukamy w selectcie opcji, która ma value równe temu z URL
-        const opcjaDoWybrania = selectTyp.querySelector(`option[value="${parametrTyp}"]`);
+            // Szukamy w selectcie opcji, która ma value równe temu z URL
+            const opcjaDoWybrania = selectTyp.querySelector(`option[value="${parametrTyp}"]`);
 
-        if (opcjaDoWybrania) {
-            selectTyp.value = parametrTyp;
+            if (opcjaDoWybrania) {
+                selectTyp.value = parametrTyp;
+            }
         }
-    }
-    aktualizujKategorie();
-});
+        aktualizujKategorie();
+    });
 </script>
 {% endblock %}

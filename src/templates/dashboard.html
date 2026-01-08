@@ -8,14 +8,15 @@
             <small class="text-muted text-uppercase">Aktualny Portfel</small>
             <h2 class="mb-0 text-primary fw-bold">
                 {% if active_budget %}
-                    {{ active_budget.nazwa }}
+                {{ active_budget.nazwa }}
                 {% else %}
-                    Brak portfela
+                Brak portfela
                 {% endif %}
             </h2>
             <div class="h4 mt-1">
                 Saldo:
-                <span class="{% if active_budget and active_budget.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
+                <span
+                    class="{% if active_budget and active_budget.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
                     {{ "%.2f"|format(active_budget.saldo if active_budget else 0) }} zł
                 </span>
             </div>
@@ -30,14 +31,17 @@
                     {% for b in budgets %}
                     <li>
                         <a class="dropdown-item {% if active_budget and b.id == active_budget.id %}active{% endif %}"
-                           href="{{ url_for('main.switch_budget', budget_id=b.id) }}">
+                            href="{{ url_for('main.switch_budget', budget_id=b.id) }}">
                             {{ b.nazwa }}
                         </a>
                     </li>
                     {% endfor %}
-                    <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-success" href="#" data-bs-toggle="modal"
+                            data-bs-target="#addBudgetModal">
                             + Utwórz nowy
                         </a>
                     </li>
@@ -86,25 +90,26 @@
 </div>
 
 <div class="modal fade" id="addBudgetModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" action="{{ url_for('main.add_budget') }}">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Nowy Portfel / Budżet</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-            <div class="mb-3">
-                <label class="form-label">Nazwa portfela</label>
-                <input type="text" name="nazwa" class="form-control" placeholder="np. Oszczędności, Wakacje..." required>
+    <div class="modal-dialog">
+        <form method="POST" action="{{ url_for('main.add_budget') }}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nowy Portfel / Budżet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nazwa portfela</label>
+                        <input type="text" name="nazwa" class="form-control" placeholder="np. Oszczędności, Wakacje..."
+                            required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Utwórz</button>
+                </div>
             </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
-          <button type="submit" class="btn btn-primary">Utwórz</button>
-        </div>
-      </div>
-    </form>
-  </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

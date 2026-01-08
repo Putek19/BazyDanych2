@@ -13,6 +13,7 @@
                 <th>Kategoria</th>
                 <th>Portfel</th>
                 <th>Kwota</th>
+                <th>Akcje</th>
             </tr>
         </thead>
         <tbody>
@@ -25,10 +26,25 @@
                 <td class="{% if t.typ == 'Wydatek' %}text-danger{% else %}text-success{% endif %} fw-bold">
                     {% if t.typ == 'Wydatek' %}-{% else %}+{% endif %}{{ "%.2f"|format(t.kwota) }} zł
                 </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('main.edit_transaction', transaction_id=t.id) }}"
+                            class="btn btn-outline-primary" title="Edytuj">
+                            ✏️
+                        </a>
+                        <form action="{{ url_for('main.delete_transaction', transaction_id=t.id) }}" method="POST"
+                            onsubmit="return confirm('Czy na pewno chcesz usunąć tę transakcję?');"
+                            style="display:inline;">
+                            <button type="submit" class="btn btn-outline-danger" title="Usuń">
+                                🗑️
+                            </button>
+                        </form>
+                    </div>
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="5" class="text-center">Brak transakcji w historii.</td>
+                <td colspan="6" class="text-center">Brak transakcji w historii.</td>
             </tr>
             {% endfor %}
         </tbody>

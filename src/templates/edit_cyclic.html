@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Edytuj płatność cykliczną</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="typ" class="form-label">Typ</label>
+                        <select class="form-control" id="typ" name="typ">
+                            <option value="Wydatek" {% if cyclic.typ=='Wydatek' %}selected{% endif %}>Wydatek</option>
+                            <option value="Wplyw" {% if cyclic.typ=='Wplyw' %}selected{% endif %}>Wpływ</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nazwa" class="form-label">Nazwa</label>
+                        <input type="text" class="form-control" id="nazwa" name="nazwa" value="{{ cyclic.nazwa }}"
+                            required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="kwota" class="form-label">Kwota (PLN)</label>
+                        <input type="number" step="0.01" class="form-control" id="kwota" name="kwota"
+                            value="{{ cyclic.kwota }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="kategoria" class="form-label">Kategoria</label>
+                        <select class="form-control" id="kategoria" name="kategoria">
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if cyclic.id_kategorii==cat.id %}selected{% endif %}>
+                                {{ cat.nazwa }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="podbudzet" class="form-label">Z portfela</label>
+                        <select class="form-control" id="podbudzet" name="podbudzet">
+                            {% for b in budgets %}
+                            <option value="{{ b.id }}" {% if cyclic.id_podbudzetu==b.id %}selected{% endif %}>
+                                {{ b.nazwa }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="okres" class="form-label">Częstotliwość</label>
+                        <select class="form-control" id="okres" name="okres">
+                            <option value="Miesięcznie" {% if cyclic.okres=='Miesięcznie' %}selected{% endif %}>
+                                Miesięcznie</option>
+                            <option value="Tygodniowo" {% if cyclic.okres=='Tygodniowo' %}selected{% endif %}>Tygodniowo
+                            </option>
+                            <option value="Rocznie" {% if cyclic.okres=='Rocznie' %}selected{% endif %}>Rocznie</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="data_startu" class="form-label">Następna płatność</label>
+                        <input type="date" class="form-control" id="data_startu" name="data_startu"
+                            value="{{ cyclic.data_startu.strftime('%Y-%m-%d') }}" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+                    <a href="{{ url_for('main.cyclic') }}" class="btn btn-secondary">Anuluj</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

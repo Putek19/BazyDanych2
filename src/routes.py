@@ -440,11 +440,13 @@ def cyclic():
         bud_id = request.form.get("podbudzet")
         data_startu = datetime.strptime(request.form.get("data_startu"), "%Y-%m-%d")
 
+        typ = request.form.get("typ")
+
         new_cyclic = CyclicTransaction(
             id_uzytkownika=user.id,
             id_podbudzetu=bud_id,
             id_kategorii=cat_id,
-            typ="Wydatek",  # Zakładamy że cykliczne to zazwyczaj rachunki
+            typ=typ,
             nazwa=nazwa,
             kwota=kwota,
             data_startu=data_startu,
@@ -510,3 +512,251 @@ def switch_budget(budget_id):
         flash("Nie masz dostępu do tego budżetu.", "danger")
 
     return redirect(url_for('main.index'))
+
+
+@bp.route("/delete_transaction/<int:transaction_id>", methods=["POST"])
+@login_required
+def delete_transaction(transaction_id):
+    user = get_current_user()
+    trans = db.session.get(Transaction, transaction_id)
+
+    if not trans:
+        flash("Nie znaleziono transakcji.", "danger")
+        return redirect(url_for("main.history"))
+
+    # Zabezpieczenie: czy transakcja należy do gospodarstwa użytkownika
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+    if trans.podbudzet.id_gospodarstwa != member.id_gospodarstwa:
+        flash("Brak uprawnień do tej transakcji.", "danger")
+        return redirect(url_for("main.history"))
+
+    # COFAANIE WPŁYWU NA SALDO
+    # Jeśli to był wydatek, oddajemy pieniądze do budżetu.
+    # Jeśli wpływ, zabieramy.
+    budget = trans.podbudzet
+    if trans.typ == "Wydatek":
+        budget.saldo += trans.kwota
+    else:
+        budget.saldo -= trans.kwota
+
+    db.session.delete(trans)
+    db.session.commit()
+    flash("Usunięto transakcję i zaktualizowano saldo.", "success")
+    
+    return redirect(url_for("main.history"))
+
+
+@bp.route("/edit_transaction/<int:transaction_id>", methods=["GET", "POST"])
+@login_required
+def edit_transaction(transaction_id):
+    user = get_current_user()
+    trans = db.session.get(Transaction, transaction_id)
+
+    if not trans:
+        flash("Nie znaleziono transakcji.", "danger")
+        return redirect(url_for("main.history"))
+
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+    if trans.podbudzet.id_gospodarstwa != member.id_gospodarstwa:
+        flash("Brak uprawnień.", "danger")
+        return redirect(url_for("main.history"))
+
+    if request.method == "POST":
+        nowa_kwota = Decimal(request.form.get("kwota"))
+        nowy_typ = request.form.get("typ")
+        nowa_nazwa = request.form.get("nazwa")
+        nowa_kat_id = request.form.get("kategoria")
+        nowy_bud_id = request.form.get("podbudzet")
+
+        # 1. Cofnij starą transakcję na starym budżecie
+        old_budget = trans.podbudzet
+        if trans.typ == "Wydatek":
+            old_budget.saldo += trans.kwota
+        else:
+            old_budget.saldo -= trans.kwota
+        
+        # 2. Zastosuj nową transakcję na nowym (lub tym samym) budżecie
+        new_budget = db.session.get(SubBudget, nowy_bud_id)
+        if nowy_typ == "Wydatek":
+            new_budget.saldo -= nowa_kwota
+        else:
+            new_budget.saldo += nowa_kwota
+
+        # 3. Zaktualizuj rekord
+        trans.kwota = nowa_kwota
+        trans.typ = nowy_typ
+        trans.nazwa = nowa_nazwa
+        trans.id_kategorii = nowa_kat_id
+        trans.id_podbudzetu = nowy_bud_id
+        
+        db.session.commit()
+        flash("Zaktualizowano transakcję.", "success")
+        return redirect(url_for("main.history"))
+
+    # GET
+    categories = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+    budgets = SubBudget.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+
+    return render_template("edit_transaction.html", 
+                           transaction=trans, 
+                           categories=categories, 
+                           budgets=budgets)
+
+
+@bp.route("/transfer", methods=["GET", "POST"])
+@login_required
+def transfer():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("main.login"))
+
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+    
+    if request.method == "POST":
+        source_id = request.form.get("source_budget")
+        target_id = request.form.get("target_budget")
+        amount_str = request.form.get("amount")
+        
+        try:
+            amount = Decimal(amount_str)
+        except:
+            flash("Nieprawidłowa kwota.", "danger")
+            return redirect(url_for("main.transfer"))
+
+        if amount <= 0:
+            flash("Kwota musi być dodatnia.", "warning")
+            return redirect(url_for("main.transfer"))
+            
+        if source_id == target_id:
+            flash("Portfel źródłowy i docelowy muszą być różne.", "warning")
+            return redirect(url_for("main.transfer"))
+
+        source_budget = db.session.get(SubBudget, source_id)
+        target_budget = db.session.get(SubBudget, target_id)
+
+        # Weryfikacja czy należą do tego samego gospodarstwa (i użytkownika)
+        if not source_budget or not target_budget:
+            flash("Nie znaleziono portfela.", "danger")
+            return redirect(url_for("main.transfer"))
+            
+        if source_budget.id_gospodarstwa != member.id_gospodarstwa or target_budget.id_gospodarstwa != member.id_gospodarstwa:
+             flash("Brak uprawnień do operacji na tych portfelach.", "danger")
+             return redirect(url_for("main.transfer"))
+
+        # 1. Znajdź lub stwórz kategorię "Przelew"
+        transfer_cat = Category.query.filter_by(
+            id_gospodarstwa=member.id_gospodarstwa, nazwa="Przelew"
+        ).first()
+
+        if not transfer_cat:
+            transfer_cat = Category(
+                id_gospodarstwa=member.id_gospodarstwa,
+                nazwa="Przelew",
+                opis="Transfery między portfelami",
+                typ="Wydatek" # Techniczny typ
+            )
+            db.session.add(transfer_cat)
+            db.session.flush() # Żeby od razu dostać ID
+
+        # 2. Wykonaj operacje salda
+        source_budget.saldo -= amount
+        target_budget.saldo += amount
+        
+        # 3. Zapisz w historii (jako dwie transakcje)
+        # A. Wydatek z portfela źródłowego
+        t_out = Transaction(
+            id_uzytkownika=user.id,
+            id_podbudzetu=source_budget.id,
+            id_kategorii=transfer_cat.id,
+            typ="Wydatek",
+            nazwa=f"Przelew do: {target_budget.nazwa}",
+            kwota=amount,
+            data=datetime.utcnow()
+        )
+        db.session.add(t_out)
+
+        # B. Wpływ do portfela docelowego
+        t_in = Transaction(
+            id_uzytkownika=user.id,
+            id_podbudzetu=target_budget.id,
+            id_kategorii=transfer_cat.id,
+            typ="Wplyw",
+            nazwa=f"Przelew od: {source_budget.nazwa}",
+            kwota=amount,
+            data=datetime.utcnow()
+        )
+        db.session.add(t_in)
+
+        db.session.commit()
+        flash(f"Przelano {amount} PLN z {source_budget.nazwa} do {target_budget.nazwa}.", "success")
+        return redirect(url_for("main.index"))
+
+    # GET
+    budgets = SubBudget.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+    return render_template("transfer.html", budgets=budgets)
+
+
+@bp.route("/delete_cyclic/<int:cyclic_id>", methods=["POST"])
+@login_required
+def delete_cyclic(cyclic_id):
+    user = get_current_user()
+    cyclic_trans = db.session.get(CyclicTransaction, cyclic_id)
+
+    if not cyclic_trans:
+        flash("Nie znaleziono płatności cyklicznej.", "danger")
+        return redirect(url_for("main.cyclic"))
+
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+    if cyclic_trans.podbudzet.id_gospodarstwa != member.id_gospodarstwa:
+        flash("Brak uprawnień.", "danger")
+        return redirect(url_for("main.cyclic"))
+
+    db.session.delete(cyclic_trans)
+    db.session.commit()
+    flash("Usunięto płatność cykliczną.", "success")
+    return redirect(url_for("main.cyclic"))
+
+
+@bp.route("/edit_cyclic/<int:cyclic_id>", methods=["GET", "POST"])
+@login_required
+def edit_cyclic(cyclic_id):
+    user = get_current_user()
+    cyclic_trans = db.session.get(CyclicTransaction, cyclic_id)
+
+    if not cyclic_trans:
+        flash("Nie znaleziono płatności.", "danger")
+        return redirect(url_for("main.cyclic"))
+
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+    if cyclic_trans.podbudzet.id_gospodarstwa != member.id_gospodarstwa:
+        flash("Brak uprawnień.", "danger")
+        return redirect(url_for("main.cyclic"))
+
+    if request.method == "POST":
+        cyclic_trans.typ = request.form.get("typ")
+        cyclic_trans.nazwa = request.form.get("nazwa")
+        cyclic_trans.kwota = Decimal(request.form.get("kwota"))
+        cyclic_trans.okres = request.form.get("okres")
+        cyclic_trans.id_kategorii = request.form.get("kategoria")
+        cyclic_trans.id_podbudzetu = request.form.get("podbudzet")
+        
+        # Data startu
+        try:
+            d_start = datetime.strptime(request.form.get("data_startu"), "%Y-%m-%d")
+            cyclic_trans.data_startu = d_start
+        except ValueError:
+            pass # Jeśli user nie zmienił daty, może przyjść pusta lub błędna? 
+                 # Wystarczy required w html, ale warto zabezpieczyć.
+                 # Tutaj zakładam, że przyjdzie poprawna z input type=date.
+
+        db.session.commit()
+        flash("Zaktualizowano płatność cykliczną.", "success")
+        return redirect(url_for("main.cyclic"))
+
+    categories = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+    budgets = SubBudget.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+
+    return render_template("edit_cyclic.html", 
+                           cyclic=cyclic_trans, 
+                           categories=categories, 
+                           budgets=budgets)

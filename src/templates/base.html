@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
     <title>Budżet Domowy</title>
@@ -17,6 +18,7 @@
             font-weight: bold;
             margin-right: 10px;
         }
+
         /* Styl dla aktywnego linku - pogrubienie i jaśniejszy kolor */
         .navbar-dark .navbar-nav .nav-link.active {
             color: #fff;
@@ -25,11 +27,12 @@
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">🏠 Budżet Domowy</a>
-            
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -38,38 +41,42 @@
                 {% if current_user %}
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.index' else '' }}" 
-                           href="{{ url_for('main.index') }}">Pulpit</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.index' else '' }}"
+                            href="{{ url_for('main.index') }}">Pulpit</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.history' else '' }}" 
-                           href="{{ url_for('main.history') }}">Historia</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.history' else '' }}"
+                            href="{{ url_for('main.history') }}">Historia</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.categories' else '' }}" 
-                           href="{{ url_for('main.categories') }}">Kategorie</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.categories' else '' }}"
+                            href="{{ url_for('main.categories') }}">Kategorie</a>
                     </li>
                     <li class="nav-item">
-    <a class="nav-link {{ 'active' if request.endpoint == 'main.analysis' else '' }}" 
-       href="{{ url_for('main.analysis') }}">📊 Analiza</a>
-</li>
-<li class="nav-item">
-    <a class="nav-link {{ 'active' if request.endpoint == 'main.cyclic' else '' }}" 
-       href="{{ url_for('main.cyclic') }}">🔄 Cykliczne</a>
-</li>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.analysis' else '' }}"
+                            href="{{ url_for('main.analysis') }}">📊 Analiza</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.cyclic' else '' }}"
+                            href="{{ url_for('main.cyclic') }}">🔄 Cykliczne</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.transfer' else '' }}"
+                            href="{{ url_for('main.transfer') }}">💸 Przelew</a>
+                    </li>
                 </ul>
                 {% endif %}
 
                 <div class="d-flex align-items-center ms-auto">
                     {% if current_user %}
-                        <div class="user-avatar">
-                            {{ current_user.nazwa_uzytkownika[0].upper() }}
-                        </div>
-                        <span class="text-white me-3">{{ current_user.nazwa_uzytkownika }}</span>
-                        <a href="{{ url_for('main.logout') }}" class="btn btn-outline-light btn-sm">Wyloguj</a>
+                    <div class="user-avatar">
+                        {{ current_user.nazwa_uzytkownika[0].upper() }}
+                    </div>
+                    <span class="text-white me-3">{{ current_user.nazwa_uzytkownika }}</span>
+                    <a href="{{ url_for('main.logout') }}" class="btn btn-outline-light btn-sm">Wyloguj</a>
                     {% else %}
-                        <a href="{{ url_for('main.login') }}" class="btn btn-light btn-sm me-2">Logowanie</a>
-                        <a href="{{ url_for('main.register') }}" class="btn btn-warning btn-sm">Rejestracja</a>
+                    <a href="{{ url_for('main.login') }}" class="btn btn-light btn-sm me-2">Logowanie</a>
+                    <a href="{{ url_for('main.register') }}" class="btn btn-warning btn-sm">Rejestracja</a>
                     {% endif %}
                 </div>
             </div>
@@ -78,11 +85,11 @@
 
     <div class="container">
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-info">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
@@ -90,4 +97,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
