@@ -9,6 +9,8 @@ from flask import (
     session,
     current_app,
 )
+from flask_login import current_user, user_logged_in, login_required, login_user, logout_user
+from sqlalchemy import desc
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from . import db
@@ -19,6 +21,25 @@ from . import db, mail
 from sqlalchemy import func
 
 bp = Blueprint("main", __name__)
+
+def get_active_budget(household_id):
+    # 1. Sprawdzamy, czy w sesji jest zapisane ID budżetu
+    active_id = session.get('active_budget_id')
+
+    if active_id:
+        # Sprawdzamy, czy ten budżet nadal istnieje i należy do tego domu
+        budget = SubBudget.query.filter_by(id=active_id, id_gospodarstwa=household_id).first()
+        if budget:
+            return budget
+
+    # 2. Jeśli nie ma w sesji, bierzemy pierwszy znaleziony (domyślny)
+    default_budget = SubBudget.query.filter_by(id_gospodarstwa=household_id).first()
+
+    # Zapisujemy go w sesji, żeby następnym razem już był
+    if default_budget:
+        session['active_budget_id'] = default_budget.id
+
+    return default_budget
 
 
 @bp.context_processor
@@ -36,39 +57,53 @@ def get_current_user():
     return None
 
 
+
 @bp.route("/")
+@login_required
 def index():
     user = get_current_user()
-    if not user:
-        return redirect(url_for("main.login"))
 
-    # Pobierz gospodarstwo usera
+
     member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
     if not member:
         return "Błąd: Brak gospodarstwa. (Błąd spójności danych)"
 
     household_id = member.id_gospodarstwa
 
-    # 1. Pobierz podbudżety i oblicz łączne saldo
-    budgets = SubBudget.query.filter_by(id_gospodarstwa=household_id).all()
-    total_saldo = sum(b.saldo for b in budgets)
+    # 1. LOGIKA BUDŻETÓW (To jest nowość)
+    # Pobieramy ten, który użytkownik wybrał (lub domyślny)
+    active_budget = get_active_budget(household_id)
 
-    # 2. Pobierz ostatnie 5 transakcji
+    # Pobieramy listę wszystkich, żeby wyświetlić je w menu "Zmień portfel"
+    all_budgets = SubBudget.query.filter_by(id_gospodarstwa=household_id).all()
+
+    # Zabezpieczenie: Jeśli nie ma żadnego budżetu, renderujemy pusty widok
+    if not active_budget:
+        return render_template("dashboard.html",
+                               active_budget=None,
+                               budgets=[],
+                               transactions=[])
+
+    # 2. POBIERANIE TRANSAKCJI (Zmiana: tylko dla aktywnego budżetu)
     recent_transactions = (
-        Transaction.query.filter(
-            Transaction.podbudzet.has(id_gospodarstwa=household_id)
-        )
-        .order_by(Transaction.data.desc())
-        .limit(5)
+        Transaction.query.filter_by(id_podbudzetu=active_budget.id)
+        .order_by(desc(Transaction.data))
+        .limit(10)  # Możesz dać 5, jeśli wolisz mniej
         .all()
     )
 
+    # 3. WYSYŁAMY DANE DO SZABLONU
+    # Zauważ, że nie musimy liczyć 'total_saldo', bo wyświetlamy saldo konkretnego budżetu (active_budget.saldo)
     return render_template(
-        "dashboard.html", user=user, saldo=total_saldo, transakcje=recent_transactions
+        "dashboard.html",
+        active_budget=active_budget,
+        budgets=all_budgets,
+        transactions=recent_transactions
     )
 
 
 @bp.route("/add_transaction", methods=["GET", "POST"])
+@login_required
 def add_transaction():
     user = get_current_user()
     if not user:
@@ -203,6 +238,7 @@ def login():
 
         if user and check_password_hash(user.haslo_hash, password):
             session["user_id"] = user.id  # ZAPISUJEMY SESJĘ!
+            login_user(user, remember=True)
             return redirect(url_for("main.index"))
         else:
             flash("Błąd logowania")
@@ -212,11 +248,13 @@ def login():
 
 @bp.route("/logout")
 def logout():
+    logout_user()
     session.pop("user_id", None)
     return redirect(url_for("main.login"))
 
 
 @bp.route("/history")
+@login_required
 def history():
     user = get_current_user()
     if not user:
@@ -238,6 +276,7 @@ def history():
 
 
 @bp.route("/categories", methods=["GET", "POST"])
+@login_required
 def categories():
     user = get_current_user()
     if not user:
@@ -353,6 +392,7 @@ def reset_token(token):
 
 
 @bp.route("/analysis")
+@login_required
 def analysis():
     user = get_current_user()
     if not user:
@@ -384,6 +424,7 @@ from .models import (
 
 
 @bp.route("/cyclic", methods=["GET", "POST"])
+@login_required
 def cyclic():
     user = get_current_user()
     if not user:
@@ -428,3 +469,44 @@ def cyclic():
         categories=categories,
         budgets=budgets,
     )
+
+# --- PODBUDŻETY ---
+
+@bp.route("/add_budget", methods=["POST"])
+@login_required
+def add_budget():
+    member = HouseholdMember.query.filter_by(id_uzytkownika=current_user.id).first()
+
+    nazwa = request.form.get("nazwa")
+
+    if nazwa:
+        new_budget = SubBudget(
+            id_gospodarstwa=member.id_gospodarstwa,
+            nazwa=nazwa,
+            saldo=0.00
+        )
+        db.session.add(new_budget)
+        db.session.commit()
+
+        # Opcjonalnie: Przełącz od razu na nowy budżet
+        session['active_budget_id'] = new_budget.id
+        flash(f"Utworzono nowy portfel: {nazwa}", "success")
+
+    return redirect(url_for('main.index'))
+
+
+@bp.route("/switch_budget/<int:budget_id>")
+@login_required
+def switch_budget(budget_id):
+    member = HouseholdMember.query.filter_by(id_uzytkownika=current_user.id).first()
+
+    # Bezpieczeństwo: Sprawdź czy ten budżet należy do gospodarstwa użytkownika!
+    budget = SubBudget.query.filter_by(id=budget_id, id_gospodarstwa=member.id_gospodarstwa).first()
+
+    if budget:
+        session['active_budget_id'] = budget.id
+        flash(f"Przełączono na: {budget.nazwa}", "info")
+    else:
+        flash("Nie masz dostępu do tego budżetu.", "danger")
+
+    return redirect(url_for('main.index'))

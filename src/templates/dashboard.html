@@ -1,50 +1,110 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h2>Cześć, {{ user.nazwa_uzytkownika }}!</h2>
-    </div>
-    <div class="col-md-4 text-end">
-        <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger btn-sm">Wyloguj</a>
-    </div>
-</div>
+<div class="container mt-4">
 
-<div class="card bg-primary text-white mb-4">
-    <div class="card-body text-center">
-        <h5 class="card-title">Dostępne środki</h5>
-        <h1 class="display-4">{{ "%.2f"|format(saldo) }} PLN</h1>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-6">
-        <!-- przekazanie z url z parammetrem dla poprawnej domyślnej wartości typu w add_transaction -->
-        <a href="{{ url_for('main.add_transaction', typ='Wydatek') }}" class="btn btn-danger w-100 p-3">
-            ➖ Dodaj Wydatek
-        </a>
-    </div>
-    <div class="col-6">
-        <a href="{{ url_for('main.add_transaction', typ='Wplyw') }}" class="btn btn-success w-100 p-3">
-            ➕ Dodaj Wpływ
-        </a>
-    </div>
-</div>
-
-<h4>Ostatnie operacje</h4>
-<div class="list-group">
-    {% for t in transakcje %}
-    <div class="list-group-item d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded shadow-sm border">
         <div>
-            <strong>{{ t.nazwa }}</strong> <br>
-            <small class="text-muted">{{ t.kategoria.nazwa }} | {{ t.data.strftime('%Y-%m-%d') }}</small>
+            <small class="text-muted text-uppercase">Aktualny Portfel</small>
+            <h2 class="mb-0 text-primary fw-bold">
+                {% if active_budget %}
+                    {{ active_budget.nazwa }}
+                {% else %}
+                    Brak portfela
+                {% endif %}
+            </h2>
+            <div class="h4 mt-1">
+                Saldo:
+                <span class="{% if active_budget and active_budget.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ "%.2f"|format(active_budget.saldo if active_budget else 0) }} zł
+                </span>
+            </div>
         </div>
-        <span class="badge {% if t.typ == 'Wydatek' %}bg-danger{% else %}bg-success{% endif %} rounded-pill">
-            {% if t.typ == 'Wydatek' %}-{% else %}+{% endif %}{{ "%.2f"|format(t.kwota) }} PLN
-        </span>
+
+        <div class="d-flex gap-2">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Zmień portfel
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% for b in budgets %}
+                    <li>
+                        <a class="dropdown-item {% if active_budget and b.id == active_budget.id %}active{% endif %}"
+                           href="{{ url_for('main.switch_budget', budget_id=b.id) }}">
+                            {{ b.nazwa }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-success" href="#" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
+                            + Utwórz nowy
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
-    {% else %}
-    <div class="alert alert-light">Brak transakcji. Dodaj coś!</div>
-    {% endfor %}
+
+    <div class="row mb-4">
+        <div class="col-6">
+            <!-- przekazanie z url z parammetrem dla poprawnej domyślnej wartości typu w add_transaction -->
+            <a href="{{ url_for('main.add_transaction', typ='Wydatek') }}" class="btn btn-danger w-100 p-3 shadow-sm">
+                ➖ Dodaj Wydatek
+            </a>
+        </div>
+        <div class="col-6">
+            <a href="{{ url_for('main.add_transaction', typ='Wplyw') }}" class="btn btn-success w-100 p-3 shadow-sm">
+                ➕ Dodaj Wpływ
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            Ostatnie operacje w: <strong>{{ active_budget.nazwa if active_budget else '' }}</strong>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for t in transactions %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-bold">{{ t.nazwa }}</div>
+                    <small class="text-muted">{{ t.data.strftime('%Y-%m-%d') }} | {{ t.kategoria.nazwa }}</small>
+                </div>
+                <span class="badge rounded-pill {% if t.typ == 'Wplyw' %}bg-success{% else %}bg-danger{% endif %} fs-6">
+                    {% if t.typ == 'Wplyw' %}+{% else %}-{% endif %}
+                    {{ "%.2f"|format(t.kwota) }} zł
+                </span>
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-muted">
+                Brak transakcji w tym portfelu.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBudgetModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('main.add_budget') }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nowy Portfel / Budżet</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label class="form-label">Nazwa portfela</label>
+                <input type="text" name="nazwa" class="form-control" placeholder="np. Oszczędności, Wakacje..." required>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+          <button type="submit" class="btn btn-primary">Utwórz</button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

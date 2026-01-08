@@ -12,6 +12,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from flask_login import UserMixin
 
 
 # Tabela łącząca
@@ -28,7 +29,7 @@ class HouseholdMember(db.Model):
     gospodarstwo = relationship("Household", back_populates="czlonkowie")
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = "uzytkownik"  # Liczba pojedyncza
 
     id = Column(Integer, Identity(start=1), primary_key=True)
