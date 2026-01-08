@@ -632,7 +632,7 @@ def transfer():
             return redirect(url_for("main.transfer"))
             
         if source_id == target_id:
-            flash("Portfel źródłowy i docelowy muszą być różne.", "warning")
+            flash("Budżet źródłowy i docelowy muszą być różne.", "warning")
             return redirect(url_for("main.transfer"))
 
         source_budget = db.session.get(SubBudget, source_id)
@@ -640,11 +640,11 @@ def transfer():
 
         # Weryfikacja czy należą do tego samego gospodarstwa (i użytkownika)
         if not source_budget or not target_budget:
-            flash("Nie znaleziono portfela.", "danger")
+            flash("Nie znaleziono budżetu.", "danger")
             return redirect(url_for("main.transfer"))
             
         if source_budget.id_gospodarstwa != member.id_gospodarstwa or target_budget.id_gospodarstwa != member.id_gospodarstwa:
-             flash("Brak uprawnień do operacji na tych portfelach.", "danger")
+             flash("Brak uprawnień do operacji na tych budżetach.", "danger")
              return redirect(url_for("main.transfer"))
 
         # 1. Znajdź lub stwórz kategorię "Przelew"
@@ -656,7 +656,7 @@ def transfer():
             transfer_cat = Category(
                 id_gospodarstwa=member.id_gospodarstwa,
                 nazwa="Przelew",
-                opis="Transfery między portfelami",
+                opis="Transfery między Budżetami Wydzielonymi",
                 typ="Wydatek" # Techniczny typ
             )
             db.session.add(transfer_cat)
@@ -667,7 +667,7 @@ def transfer():
         target_budget.saldo += amount
         
         # 3. Zapisz w historii (jako dwie transakcje)
-        # A. Wydatek z portfela źródłowego
+        # A. Wydatek z podbudżetu źródłowego
         t_out = Transaction(
             id_uzytkownika=user.id,
             id_podbudzetu=source_budget.id,
@@ -679,7 +679,7 @@ def transfer():
         )
         db.session.add(t_out)
 
-        # B. Wpływ do portfela docelowego
+        # B. Wpływ do podbudżetu docelowego
         t_in = Transaction(
             id_uzytkownika=user.id,
             id_podbudzetu=target_budget.id,

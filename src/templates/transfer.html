@@ -5,12 +5,12 @@
     <div class="col-md-8">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Przelew między portfelami</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Przelew między Budżetami Wydzielonymi</h6>
             </div>
             <div class="card-body">
                 <form method="POST">
                     <div class="mb-3">
-                        <label for="source_budget" class="form-label">Z portfela</label>
+                        <label for="source_budget" class="form-label">Z budżetu</label>
                         <select class="form-control" id="source_budget" name="source_budget">
                             {% for b in budgets %}
                             <option value="{{ b.id }}">
@@ -21,7 +21,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="target_budget" class="form-label">Na portfel</label>
+                        <label for="target_budget" class="form-label">Na budżet</label>
                         <select class="form-control" id="target_budget" name="target_budget">
                             {% for b in budgets %}
                             <option value="{{ b.id }}">
@@ -29,7 +29,7 @@
                             </option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Wybierz inny portfel niż źródłowy.</small>
+                        <small class="text-muted">Wybierz inny budżet niż źródłowy.</small>
                     </div>
 
                     <div class="mb-3">

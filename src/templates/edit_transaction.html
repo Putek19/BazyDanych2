@@ -42,7 +42,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="podbudzet" class="form-label">Portfel</label>
+                        <label for="podbudzet" class="form-label">Budżet Wydzielony</label>
                         <select class="form-control" id="podbudzet" name="podbudzet">
                             {% for b in budgets %}
                             <option value="{{ b.id }}" {% if transaction.id_podbudzetu==b.id %}selected{% endif %}>

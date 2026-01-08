@@ -10,7 +10,7 @@
                 {% if active_budget %}
                 {{ active_budget.nazwa }}
                 {% else %}
-                Brak portfela
+                Brak budżetu
                 {% endif %}
             </h2>
             <div class="h4 mt-1">
@@ -25,7 +25,7 @@
         <div class="d-flex gap-2">
             <div class="dropdown">
                 <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Zmień portfel
+                    Zmień budżet
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     {% for b in budgets %}
@@ -82,7 +82,7 @@
             </div>
             {% else %}
             <div class="p-4 text-center text-muted">
-                Brak transakcji w tym portfelu.
+                Brak transakcji w tym Budżecie Wydzielonym.
             </div>
             {% endfor %}
         </div>
@@ -94,12 +94,12 @@
         <form method="POST" action="{{ url_for('main.add_budget') }}">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Nowy Portfel / Budżet</h5>
+                    <h5 class="modal-title">Nowy Budżet Wydzielony</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nazwa portfela</label>
+                        <label class="form-label">Nazwa Budżetu Wydzielonego</label>
                         <input type="text" name="nazwa" class="form-control" placeholder="np. Oszczędności, Wakacje..."
                             required>
                     </div>
