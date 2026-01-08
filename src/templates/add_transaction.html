@@ -5,9 +5,10 @@
     <div class="card-header">Nowa Transakcja</div>
     <div class="card-body">
         <form method="POST">
+
             <div class="mb-3">
                 <label>Typ operacji</label>
-                <select name="typ" class="form-select">
+                <select name="typ" id="select-typ" class="form-select" onchange="aktualizujKategorie()">
                     <option value="Wydatek">🔴 Wydatek</option>
                     <option value="Wplyw">🟢 Wpływ</option>
                 </select>
@@ -25,11 +26,8 @@
 
             <div class="mb-3">
                 <label>Kategoria</label>
-                <select name="kategoria" class="form-select" required>
-                    {% for c in categories %}
-                    <option value="{{ c.id }}">{{ c.nazwa }}</option>
-                    {% endfor %}
-                </select>
+                <select name="kategoria" id="select-kategoria" class="form-select" required>
+                    </select>
             </div>
 
             <div class="mb-3">
@@ -46,4 +44,64 @@
         </form>
     </div>
 </div>
+
+<script>
+    // JS odpowiedzialny za filtrowanie kategorii zależnie od wybranego typu: "Wydatek" lub "Wpływ"
+    const wszystkieKategorie = [
+        {% for c in categories %}
+            { id: "{{ c.id }}", nazwa: "{{ c.nazwa }}", typ: "{{ c.typ }}" },
+        {% endfor %}
+    ];
+
+    function aktualizujKategorie() {
+        const typSelect = document.getElementById('select-typ');
+        const catSelect = document.getElementById('select-kategoria');
+
+        // Pobieranie co wybrał użytkownik ("Wydatek" lub "Wplyw")
+        const wybranyTyp = typSelect.value;
+
+        // Wyczyść obecną listę
+        catSelect.innerHTML = "";
+
+        //  Filtrowanie kategorii z listy
+        const pasujace = wszystkieKategorie.filter(kategoria => kategoria.typ === wybranyTyp);
+
+        // Sprawdzanie czy są jakiekolwiek kategorie
+        if (pasujace.length === 0) {
+            const option = document.createElement('option');
+            option.text = "-- Brak kategorii tego typu --";
+            catSelect.add(option);
+        } else {
+            // Dodanie pasujących opcji do selecta
+            pasujace.forEach(kategoria => {
+                const option = document.createElement('option');
+                option.value = kategoria.id;
+                option.text = kategoria.nazwa;
+                catSelect.add(option);
+            });
+        }
+    }
+
+
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    // Pobranie parametru z adresu url
+    const params = new URLSearchParams(window.location.search);
+    const parametrTyp = params.get('typ');
+
+    // Jeśli parametr istnieje, spróbuj ustawić go w selectcie
+    if (parametrTyp) {
+        const selectTyp = document.getElementById('select-typ');
+
+        // Szukamy w selectcie opcji, która ma value równe temu z URL
+        const opcjaDoWybrania = selectTyp.querySelector(`option[value="${parametrTyp}"]`);
+
+        if (opcjaDoWybrania) {
+            selectTyp.value = parametrTyp;
+        }
+    }
+    aktualizujKategorie();
+});
+</script>
 {% endblock %}

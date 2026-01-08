@@ -122,13 +122,7 @@ def add_transaction():
         "add_transaction.html", categories=categories, budgets=budgets
     )
 
-    # GET: Pobierz listy do dropdownów
-    categories = Category.query.filter_by(id_gospodarstwa=household_id).all()
-    budgets = SubBudget.query.filter_by(id_gospodarstwa=household_id).all()
 
-    return render_template(
-        "add_transaction.html", categories=categories, budgets=budgets
-    )
 
 
 @bp.route("/register", methods=["GET", "POST"])

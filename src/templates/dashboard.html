@@ -19,12 +19,13 @@
 
 <div class="row mb-4">
     <div class="col-6">
-        <a href="{{ url_for('main.add_transaction') }}" class="btn btn-danger w-100 p-3">
+        <!-- przekazanie z url z parammetrem dla poprawnej domyślnej wartości typu w add_transaction -->
+        <a href="{{ url_for('main.add_transaction', typ='Wydatek') }}" class="btn btn-danger w-100 p-3">
             ➖ Dodaj Wydatek
         </a>
     </div>
     <div class="col-6">
-        <a href="{{ url_for('main.add_transaction') }}" class="btn btn-success w-100 p-3">
+        <a href="{{ url_for('main.add_transaction', typ='Wplyw') }}" class="btn btn-success w-100 p-3">
             ➕ Dodaj Wpływ
         </a>
     </div>
