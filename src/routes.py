@@ -1,9 +1,22 @@
 from decimal import Decimal
-from flask import Blueprint, render_template, redirect, url_for, flash, request, session
+from flask import (
+    Blueprint,
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    request,
+    session,
+    current_app,
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from . import db
 from .models import User, Household, HouseholdMember, SubBudget, Category, Transaction
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
+from . import db, mail
+from sqlalchemy import func
 
 bp = Blueprint("main", __name__)
 
@@ -267,3 +280,152 @@ def categories():
     # Wyświetlanie listy
     cats = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
     return render_template("categories.html", categories=cats)
+
+
+def send_reset_email(user):
+    s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+    token = s.dumps(user.email, salt="email-confirm")  # Token ważny dla tego emaila
+
+    msg = Message(
+        "Reset Hasła - Budżet Domowy",
+        sender="twoj.adres@gmail.com",  # Musi być ten sam co w .env
+        recipients=[user.email],
+    )
+
+    # Tworzymy link (external=True daje pełny adres http://localhost...)
+    link = url_for("main.reset_token", token=token, _external=True)
+
+    msg.body = f"""Witaj {user.nazwa_uzytkownika},
+
+Aby zresetować hasło, kliknij w poniższy link:
+{link}
+
+Jeśli to nie Ty prosiłeś o reset, zignoruj tę wiadomość.
+"""
+    try:
+        mail.send(msg)
+    except Exception as e:
+        print(f"Błąd wysyłania maila: {e}")
+
+
+@bp.route("/reset_password", methods=["GET", "POST"])
+def reset_request():
+    if request.method == "POST":
+        email = request.form.get("email")
+        user = User.query.filter_by(email=email).first()
+        if user:
+            send_reset_email(user)
+        # Zawsze wyświetlamy ten sam komunikat dla bezpieczeństwa (żeby nie zdradzać czy mail istnieje)
+        flash("Jeśli konto istnieje, wysłaliśmy instrukcję na email.", "info")
+        return redirect(url_for("main.login"))
+    return render_template("reset_request.html")
+
+
+@bp.route("/reset_password/<token>", methods=["GET", "POST"])
+def reset_token(token):
+    # --- POPRAWKA TUTAJ ---
+    # Zmieniamy bp.secret_key na current_app.config['SECRET_KEY']
+    s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+    # ----------------------
+
+    try:
+        # Token ważny przez 3600 sekund (1 godzina)
+        email = s.loads(token, salt="email-confirm", max_age=3600)
+    except Exception as e:
+        # Warto wypisać błąd w konsoli dla pewności
+        print(f"Błąd tokena: {e}")
+        flash("Link jest nieprawidłowy lub wygasł.", "danger")
+        return redirect(url_for("main.reset_request"))
+
+    if request.method == "POST":
+        password = request.form.get("password")
+
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.haslo_hash = generate_password_hash(password)
+            db.session.commit()
+            flash("Twoje hasło zostało zmienione! Możesz się zalogować.", "success")
+            return redirect(url_for("main.login"))
+
+    return render_template("reset_token.html")
+
+
+# --- NOWE FUNKCJE (Wklej na końcu src/routes.py) ---
+
+
+@bp.route("/analysis")
+def analysis():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("main.login"))
+
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+
+    # Zapytanie SQL: Wybierz nazwę kategorii i sumę kwot, zgrupuj po kategorii
+    # Filtrujemy tylko 'Wydatek'
+    data = (
+        db.session.query(Category.nazwa, func.sum(Transaction.kwota))
+        .join(Transaction)
+        .filter(Transaction.podbudzet.has(id_gospodarstwa=member.id_gospodarstwa))
+        .filter(Transaction.typ == "Wydatek")
+        .group_by(Category.nazwa)
+        .all()
+    )
+
+    # Przygotowanie danych dla Chart.js (JavaScript potrzebuje dwóch list)
+    labels = [row[0] for row in data]
+    values = [float(row[1]) for row in data]  # Konwersja Decimal na float dla JS
+
+    return render_template("analysis.html", labels=labels, values=values)
+
+
+from .models import (
+    CyclicTransaction,
+)  # Upewnij się że masz ten import na górze, albo dodaj go tutaj lokalnie
+
+
+@bp.route("/cyclic", methods=["GET", "POST"])
+def cyclic():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("main.login"))
+
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+
+    if request.method == "POST":
+        nazwa = request.form.get("nazwa")
+        kwota = Decimal(request.form.get("kwota"))
+        okres = request.form.get("okres")  # np. Miesięcznie
+        cat_id = request.form.get("kategoria")
+        bud_id = request.form.get("podbudzet")
+        data_startu = datetime.strptime(request.form.get("data_startu"), "%Y-%m-%d")
+
+        new_cyclic = CyclicTransaction(
+            id_uzytkownika=user.id,
+            id_podbudzetu=bud_id,
+            id_kategorii=cat_id,
+            typ="Wydatek",  # Zakładamy że cykliczne to zazwyczaj rachunki
+            nazwa=nazwa,
+            kwota=kwota,
+            data_startu=data_startu,
+            okres=okres,
+        )
+        db.session.add(new_cyclic)
+        db.session.commit()
+        flash("Dodano płatność cykliczną.")
+        return redirect(url_for("main.cyclic"))
+
+    # Pobieranie danych do wyświetlenia
+    transakcje_cykliczne = CyclicTransaction.query.filter(
+        CyclicTransaction.podbudzet.has(id_gospodarstwa=member.id_gospodarstwa)
+    ).all()
+
+    categories = Category.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+    budgets = SubBudget.query.filter_by(id_gospodarstwa=member.id_gospodarstwa).all()
+
+    return render_template(
+        "cyclic.html",
+        cykliczne=transakcje_cykliczne,
+        categories=categories,
+        budgets=budgets,
+    )

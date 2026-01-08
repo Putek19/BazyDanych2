@@ -49,6 +49,14 @@
                         <a class="nav-link {{ 'active' if request.endpoint == 'main.categories' else '' }}" 
                            href="{{ url_for('main.categories') }}">Kategorie</a>
                     </li>
+                    <li class="nav-item">
+    <a class="nav-link {{ 'active' if request.endpoint == 'main.analysis' else '' }}" 
+       href="{{ url_for('main.analysis') }}">📊 Analiza</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link {{ 'active' if request.endpoint == 'main.cyclic' else '' }}" 
+       href="{{ url_for('main.cyclic') }}">🔄 Cykliczne</a>
+</li>
                 </ul>
                 {% endif %}
 

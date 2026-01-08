@@ -1,4 +1,5 @@
 Flask
+flask-mail
 Flask-SQLAlchemy
 oracledb
 python-dotenv

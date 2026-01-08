@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>📊 Analiza Wydatków</h2>
+<hr>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Struktura Wydatków (Wykres)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Pobieramy dane z Pythona (Jinja2 wstawia je tutaj)
+    const labels = {{ labels | tojson }};
+    const data = {{ values | tojson }};
+
+    if (labels.length === 0) {
+        document.getElementById('myChart').parentElement.innerHTML = "<p class='text-center'>Brak danych do wyświetlenia. Dodaj wydatki!</p>";
+    } else {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'doughnut', // Typ wykresu: kołowy z dziurą
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Wydatki (PLN)',
+                    data: data,
+                    backgroundColor: [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'
+                    ],
+                    hoverOffset: 4
+                }]
+            }
+        });
+    }
+</script>
+{% endblock %}
