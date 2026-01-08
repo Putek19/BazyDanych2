@@ -9,11 +9,10 @@ from flask import (
     session,
     current_app,
 )
-from flask_login import current_user, user_logged_in, login_required, login_user, logout_user
+from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import desc
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from . import db
 from .models import User, Household, HouseholdMember, SubBudget, Category, Transaction
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
@@ -74,7 +73,7 @@ def index():
     # Pobieramy ten, który użytkownik wybrał (lub domyślny)
     active_budget = get_active_budget(household_id)
 
-    # Pobieramy listę wszystkich, żeby wyświetlić je w menu "Zmień portfel"
+    # Pobieramy listę wszystkich, żeby wyświetlić je w menu "Zmień budżet"
     all_budgets = SubBudget.query.filter_by(id_gospodarstwa=household_id).all()
 
     # Zabezpieczenie: Jeśli nie ma żadnego budżetu, renderujemy pusty widok
@@ -105,9 +104,7 @@ def index():
 @bp.route("/add_transaction", methods=["GET", "POST"])
 @login_required
 def add_transaction():
-    user = get_current_user()
-    if not user:
-        return redirect(url_for("main.login"))
+    user = current_user
 
     member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
     household_id = member.id_gospodarstwa
@@ -153,8 +150,15 @@ def add_transaction():
     categories = Category.query.filter_by(id_gospodarstwa=household_id).all()
     budgets = SubBudget.query.filter_by(id_gospodarstwa=household_id).all()
 
+    # Znalezienie aktualnego budżetu dla domyślnej wartości w add_transaction
+    active_budget = get_active_budget(household_id)
+    active_budget_id = active_budget.id if active_budget else None
+
     return render_template(
-        "add_transaction.html", categories=categories, budgets=budgets
+        "add_transaction.html",
+        categories=categories,
+        budgets=budgets,
+        active_budget_id=active_budget_id
     )
 
 
@@ -200,9 +204,9 @@ def register():
 
         # --- AUTOMATYCZNE TWORZENIE DANYCH STARTOWYCH ---
 
-        # A. Domyślny portfel
+        # A. Domyślny budżet
         wallet = SubBudget(
-            id_gospodarstwa=new_household.id, nazwa="Portfel Główny", saldo=0.00
+            id_gospodarstwa=new_household.id, nazwa="Budżet Główny", saldo=0.00
         )
         db.session.add(wallet)
 
@@ -492,7 +496,7 @@ def add_budget():
 
         # Opcjonalnie: Przełącz od razu na nowy budżet
         session['active_budget_id'] = new_budget.id
-        flash(f"Utworzono nowy portfel: {nazwa}", "success")
+        flash(f"Utworzono nowy budżet wydzielony: {nazwa}", "success")
 
     return redirect(url_for('main.index'))
 

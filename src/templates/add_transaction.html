@@ -31,10 +31,15 @@
             </div>
 
             <div class="mb-3">
-                <label>Z portfela</label>
+                <label>Z budżetu wydzielonego</label>
                 <select name="podbudzet" class="form-select" required>
                     {% for b in budgets %}
-                    <option value="{{ b.id }}">{{ b.nazwa }} ({{ "%.2f"|format(b.saldo) }} zł)</option>
+                        <option value="{{ b.id }}"
+                            {% if active_budget_id and b.id == active_budget_id %} selected {% endif %}>
+
+                            {{ b.nazwa }} ({{ "%.2f"|format(b.saldo) }} zł)
+
+                        </option>
                     {% endfor %}
                 </select>
             </div>
