@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Cześć, {{ user.nazwa_uzytkownika }}!</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger btn-sm">Wyloguj</a>
+    </div>
+</div>
+
+<div class="card bg-primary text-white mb-4">
+    <div class="card-body text-center">
+        <h5 class="card-title">Dostępne środki</h5>
+        <h1 class="display-4">{{ "%.2f"|format(saldo) }} PLN</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-6">
+        <a href="{{ url_for('main.add_transaction') }}" class="btn btn-danger w-100 p-3">
+            ➖ Dodaj Wydatek
+        </a>
+    </div>
+    <div class="col-6">
+        <a href="{{ url_for('main.add_transaction') }}" class="btn btn-success w-100 p-3">
+            ➕ Dodaj Wpływ
+        </a>
+    </div>
+</div>
+
+<h4>Ostatnie operacje</h4>
+<div class="list-group">
+    {% for t in transakcje %}
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>{{ t.nazwa }}</strong> <br>
+            <small class="text-muted">{{ t.kategoria.nazwa }} | {{ t.data.strftime('%Y-%m-%d') }}</small>
+        </div>
+        <span class="badge {% if t.typ == 'Wydatek' %}bg-danger{% else %}bg-success{% endif %} rounded-pill">
+            {% if t.typ == 'Wydatek' %}-{% else %}+{% endif %}{{ "%.2f"|format(t.kwota) }} PLN
+        </span>
+    </div>
+    {% else %}
+    <div class="alert alert-light">Brak transakcji. Dodaj coś!</div>
+    {% endfor %}
+</div>
+{% endblock %}
