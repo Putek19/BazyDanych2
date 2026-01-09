@@ -9,12 +9,12 @@
             </div>
             <div class="card-body">
                 <form method="POST">
+
                     <div class="mb-3">
                         <label for="typ" class="form-label">Typ</label>
-                        <select class="form-control" id="typ" name="typ">
-                            <option value="Wydatek" {% if transaction.typ=='Wydatek' %}selected{% endif %}>Wydatek
-                            </option>
-                            <option value="Wplyw" {% if transaction.typ=='Wplyw' %}selected{% endif %}>Wpływ</option>
+                        <select class="form-control" id="select-typ" name="typ" onchange="aktualizujKategorie()">
+                            <option value="Wydatek" {% if transaction.typ=='Wydatek' %}selected{% endif %}>🔴 Wydatek</option>
+                            <option value="Wplyw" {% if transaction.typ=='Wplyw' %}selected{% endif %}>🟢 Wpływ</option>
                         </select>
                     </div>
 
@@ -32,13 +32,8 @@
 
                     <div class="mb-3">
                         <label for="kategoria" class="form-label">Kategoria</label>
-                        <select class="form-control" id="kategoria" name="kategoria">
-                            {% for cat in categories %}
-                            <option value="{{ cat.id }}" {% if transaction.id_kategorii==cat.id %}selected{% endif %}>
-                                {{ cat.nazwa }} ({{ cat.typ }})
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <select class="form-control" id="select-kategoria" name="kategoria" required>
+                            </select>
                     </div>
 
                     <div class="mb-3">
@@ -46,7 +41,7 @@
                         <select class="form-control" id="podbudzet" name="podbudzet">
                             {% for b in budgets %}
                             <option value="{{ b.id }}" {% if transaction.id_podbudzetu==b.id %}selected{% endif %}>
-                                {{ b.nazwa }} (Obecnie: {{ b.saldo }} PLN)
+                                {{ b.nazwa }} (Obecnie: {{ "%.2f"|format(b.saldo) }} PLN)
                             </option>
                             {% endfor %}
                         </select>
@@ -59,4 +54,59 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Przekazujemy listę kategorii z Pythona do JS
+    const wszystkieKategorie = [
+        {% for c in categories %}
+            { id: "{{ c.id }}", nazwa: "{{ c.nazwa }}", typ: "{{ c.typ }}" },
+        {% endfor %}
+    ];
+
+    // Przekazujemy ID aktualnie przypisanej kategorii (do pre-selekcji)
+    const aktualneIdKategorii = "{{ transaction.id_kategorii }}";
+
+    function aktualizujKategorie() {
+        const typSelect = document.getElementById('select-typ');
+        const catSelect = document.getElementById('select-kategoria');
+
+        const wybranyTyp = typSelect.value;
+
+        // Zapamiętujemy, co jest aktualnie wybrane w selectcie (jeśli użytkownik zmienia typ ręcznie)
+        // Jeśli to pierwsze uruchomienie, używamy wartości z bazy (aktualneIdKategorii)
+        const obecnieWybranaWartosc = catSelect.value || aktualneIdKategorii;
+
+        // Czyścimy listę
+        catSelect.innerHTML = "";
+
+        // Filtrujemy kategorie
+        const pasujace = wszystkieKategorie.filter(k => k.typ === wybranyTyp);
+
+        if (pasujace.length === 0) {
+            const option = document.createElement('option');
+            option.text = "-- Brak kategorii --";
+            catSelect.add(option);
+        } else {
+            pasujace.forEach(kategoria => {
+                const option = document.createElement('option');
+                option.value = kategoria.id;
+                option.text = kategoria.nazwa;
+
+                // KLUCZOWY MOMENT:
+                // Sprawdzamy, czy to jest ta kategoria, którą edytujemy.
+                // Używamy "==" zamiast "===" żeby ignorować różnice typów (string vs int)
+                if (kategoria.id == obecnieWybranaWartosc) {
+                    option.selected = true;
+                }
+
+                catSelect.add(option);
+            });
+        }
+    }
+
+    // Uruchomienie przy starcie strony, aby ustawić początkowy stan
+    document.addEventListener("DOMContentLoaded", function() {
+        aktualizujKategorie();
+    });
+</script>
 {% endblock %}

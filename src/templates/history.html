@@ -5,7 +5,7 @@
 <hr>
 
 <div class="table-responsive">
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover align-middle">
         <thead class="table-dark">
             <tr>
                 <th>Data</th>
@@ -13,7 +13,7 @@
                 <th>Kategoria</th>
                 <th>Budżet wydzielony</th>
                 <th>Kwota</th>
-                <th>Akcje</th>
+                <th style="width: 120px;">Akcje</th>
             </tr>
         </thead>
         <tbody>
@@ -27,19 +27,29 @@
                     {% if t.typ == 'Wydatek' %}-{% else %}+{% endif %}{{ "%.2f"|format(t.kwota) }} zł
                 </td>
                 <td>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <a href="{{ url_for('main.edit_transaction', transaction_id=t.id) }}"
-                            class="btn btn-outline-primary" title="Edytuj">
-                            ✏️
-                        </a>
-                        <form action="{{ url_for('main.delete_transaction', transaction_id=t.id) }}" method="POST"
-                            onsubmit="return confirm('Czy na pewno chcesz usunąć tę transakcję?');"
-                            style="display:inline;">
-                            <button type="submit" class="btn btn-outline-danger" title="Usuń">
-                                🗑️
-                            </button>
-                        </form>
-                    </div>
+                    {% if t.kategoria.nazwa in ['Przelew Wychodzący', 'Przelew Przychodzący'] %}
+
+                        <span class="text-muted" title="To jest przelew automatyczny. Nie można go edytować ani usunąć, aby zachować spójność salda.">
+                            🔒 <small>Przelew</small>
+                        </span>
+
+                    {% else %}
+
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{{ url_for('main.edit_transaction', t_id=t.id) }}"
+                                class="btn btn-outline-primary" title="Edytuj">
+                                ✏️
+                            </a>
+                            <form action="{{ url_for('main.delete_transaction', t_id=t.id) }}" method="POST"
+                                onsubmit="return confirm('Czy na pewno chcesz usunąć tę transakcję?');"
+                                style="display:inline;">
+                                <button type="submit" class="btn btn-outline-danger" title="Usuń">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+
+                    {% endif %}
                 </td>
             </tr>
             {% else %}
