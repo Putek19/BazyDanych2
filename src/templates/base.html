@@ -38,7 +38,7 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                {% if current_user %}
+                {% if current_user.is_authenticated %}
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.endpoint == 'main.index' else '' }}"
@@ -68,7 +68,7 @@
                 {% endif %}
 
                 <div class="d-flex align-items-center ms-auto">
-                    {% if current_user %}
+                    {% if current_user.is_authenticated %}
                     <div class="user-avatar">
                         {{ current_user.nazwa_uzytkownika[0].upper() }}
                     </div>

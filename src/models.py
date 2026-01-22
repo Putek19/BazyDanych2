@@ -119,6 +119,7 @@ class CyclicTransaction(db.Model):
     nazwa = Column(String(100), nullable=False)
     kwota = Column(Numeric(10, 2), nullable=False)
     data_startu = Column(Date, nullable=False)
+    data_nastepnej_platnosci = Column(Date, nullable=False)  # NOWE POLA
     okres = Column(String(20), nullable=False)  # np. 'MIESIECZNIE', 'TYGODNIOWO'
     zdjecie = Column(LargeBinary, nullable=True)
 

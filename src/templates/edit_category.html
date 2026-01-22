@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Edytuj Kategorię</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="nazwa" class="form-label">Nazwa kategorii</label>
+                            <input type="text" class="form-control" name="nazwa" id="nazwa" value="{{ category.nazwa }}"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="opis" class="form-label">Opis</label>
+                            <textarea class="form-control" name="opis" id="opis"
+                                rows="3">{{ category.opis or '' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Typ</label>
+                            <input type="text" class="form-control" value="{{ category.typ }}" disabled>
+                            <div class="form-text">Typu kategorii nie można zmienić.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.categories') }}" class="btn btn-secondary">Anuluj</a>
+                            <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

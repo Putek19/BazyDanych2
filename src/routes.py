@@ -41,26 +41,13 @@ def get_active_budget(household_id):
     return default_budget
 
 
-@bp.context_processor
-def inject_user():
-    user = None
-    if "user_id" in session:
-        user = db.session.get(User, session["user_id"])
-    return dict(current_user=user)
-
-
-# Pomocnik: pobierz aktualnie zalogowanego usera
-def get_current_user():
-    if "user_id" in session:
-        return db.session.get(User, session["user_id"])
-    return None
 
 
 
 @bp.route("/")
 @login_required
 def index():
-    user = get_current_user()
+    user = current_user
 
 
     member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
@@ -241,7 +228,7 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.haslo_hash, password):
-            session["user_id"] = user.id  # ZAPISUJEMY SESJĘ!
+            # session["user_id"] = user.id  # NIE POTRZEBNE PRZY FLASK-LOGIN
             login_user(user, remember=True)
             return redirect(url_for("main.index"))
         else:
@@ -253,16 +240,15 @@ def login():
 @bp.route("/logout")
 def logout():
     logout_user()
-    session.pop("user_id", None)
+    # session.pop("user_id", None)
     return redirect(url_for("main.login"))
 
 
 @bp.route("/history")
 @login_required
 def history():
-    user = get_current_user()
-    if not user:
-        return redirect(url_for("main.login"))
+    user = current_user
+    # if not user: return redirect... (Obsłużone przez @login_required)
 
     # Pobierz ID gospodarstwa
     member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
@@ -282,9 +268,8 @@ def history():
 @bp.route("/categories", methods=["GET", "POST"])
 @login_required
 def categories():
-    user = get_current_user()
-    if not user:
-        return redirect(url_for("main.login"))
+    user = current_user
+    # if not user: ...
 
     member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
 
@@ -322,6 +307,78 @@ def categories():
 
     # Przekazanie do szablonu dwóch list zależnych od typu kategorii
     return render_template("categories.html", wydatki=cats_wydatki, wplywy=cats_wplywy)
+
+
+@bp.route("/delete_category/<int:c_id>", methods=["POST"])
+@login_required
+def delete_category(c_id):
+    user = current_user
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+    
+    cat = db.session.get(Category, c_id)
+    if not cat:
+        flash("Kategoria nie istnieje.", "danger")
+        return redirect(url_for("main.categories"))
+
+    # Autoryzacja
+    if cat.id_gospodarstwa != member.id_gospodarstwa:
+        flash("Brak uprawnień.", "danger")
+        return redirect(url_for("main.categories"))
+    
+    # Blokada usunięcia kategorii systemowych (opcjonalnie)
+    if cat.nazwa in ["Przelew Wychodzący", "Przelew Przychodzący"]:
+        flash("Nie można usunąć kategorii systemowej.", "warning")
+        return redirect(url_for("main.categories"))
+
+    try:
+        db.session.delete(cat)
+        db.session.commit()
+        flash("Usunięto kategorię.", "success")
+    except Exception as e:
+        # Prawdopodobnie ConstraintError (są transakcje w tej kategorii)
+        db.session.rollback()
+        flash("Nie można usunąć kategorii, która ma przypisane transakcje.", "danger")
+        print(f"Błąd usuwania kategorii: {e}")
+
+    return redirect(url_for("main.categories"))
+
+
+@bp.route("/edit_category/<int:c_id>", methods=["GET", "POST"])
+@login_required
+def edit_category(c_id):
+    user = current_user
+    member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
+    
+    cat = db.session.get(Category, c_id)
+    if not cat:
+        flash("Kategoria nie istnieje.", "danger")
+        return redirect(url_for("main.categories"))
+
+    if cat.id_gospodarstwa != member.id_gospodarstwa:
+        flash("Brak uprawnień.", "danger")
+        return redirect(url_for("main.categories"))
+
+    if request.method == "POST":
+        nazwa = request.form.get("nazwa")
+        opis = request.form.get("opis")
+        
+        # Sprawdzamy czy nazwa nie jest zajęta (ale pomijamy samą siebie)
+        exists = Category.query.filter(
+            Category.id_gospodarstwa == member.id_gospodarstwa,
+            Category.nazwa == nazwa,
+            Category.id != c_id
+        ).first()
+
+        if exists:
+            flash("Kategoria o takiej nazwie już istnieje.", "warning")
+        else:
+            cat.nazwa = nazwa
+            cat.opis = opis
+            db.session.commit()
+            flash("Zaktualizowano kategorię.", "success")
+            return redirect(url_for("main.categories"))
+
+    return render_template("edit_category.html", category=cat)
 
 
 def send_reset_email(user):
@@ -398,9 +455,8 @@ def reset_token(token):
 @bp.route("/analysis")
 @login_required
 def analysis():
-    user = get_current_user()
-    if not user:
-        return redirect(url_for("main.login"))
+    user = current_user
+    # if not user...
 
     member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
 
@@ -430,9 +486,8 @@ from .models import (
 @bp.route("/cyclic", methods=["GET", "POST"])
 @login_required
 def cyclic():
-    user = get_current_user()
-    if not user:
-        return redirect(url_for("main.login"))
+    user = current_user
+    # if not user...
 
     member = HouseholdMember.query.filter_by(id_uzytkownika=user.id).first()
 
@@ -454,6 +509,7 @@ def cyclic():
             nazwa=nazwa,
             kwota=kwota,
             data_startu=data_startu,
+            data_nastepnej_platnosci=data_startu, # Początkowo to samo
             okres=okres,
         )
         db.session.add(new_cyclic)
@@ -723,7 +779,7 @@ def delete_transaction(t_id):
 @bp.route("/delete_cyclic/<int:cyclic_id>", methods=["POST"])
 @login_required
 def delete_cyclic(cyclic_id):
-    user = get_current_user()
+    user = current_user
     cyclic_trans = db.session.get(CyclicTransaction, cyclic_id)
 
     if not cyclic_trans:
@@ -744,7 +800,7 @@ def delete_cyclic(cyclic_id):
 @bp.route("/edit_cyclic/<int:cyclic_id>", methods=["GET", "POST"])
 @login_required
 def edit_cyclic(cyclic_id):
-    user = get_current_user()
+    user = current_user
     cyclic_trans = db.session.get(CyclicTransaction, cyclic_id)
 
     if not cyclic_trans:
@@ -767,7 +823,14 @@ def edit_cyclic(cyclic_id):
         # Data startu
         try:
             d_start = datetime.strptime(request.form.get("data_startu"), "%Y-%m-%d")
+            # Jeśli zmieniamy datę startu, to warto zresetować licznik
+            # UWAGA: To prosta logika, można ją rozbudować
             cyclic_trans.data_startu = d_start
+            
+            # Opcjonalnie: Jeśli nowa data startu jest w przyszłości, to ustaw też następną płatność
+            if d_start > datetime.utcnow():
+                 cyclic_trans.data_nastepnej_platnosci = d_start
+                 
         except ValueError:
             pass # Jeśli user nie zmienił daty, może przyjść pusta lub błędna? 
                  # Wystarczy required w html, ale warto zabezpieczyć.
