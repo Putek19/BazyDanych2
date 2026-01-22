@@ -49,20 +49,20 @@
                             href="{{ url_for('main.history') }}">Historia</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.categories' else '' }}"
-                            href="{{ url_for('main.categories') }}">Kategorie</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'categories.categories' else '' }}"
+                            href="{{ url_for('categories.categories') }}">Kategorie</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.endpoint == 'main.analysis' else '' }}"
                             href="{{ url_for('main.analysis') }}">📊 Analiza</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.cyclic' else '' }}"
-                            href="{{ url_for('main.cyclic') }}">🔄 Cykliczne</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'transactions.cyclic' else '' }}"
+                            href="{{ url_for('transactions.cyclic') }}">🔄 Cykliczne</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.transfer' else '' }}"
-                            href="{{ url_for('main.transfer') }}">💸 Przelew</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'budgets.transfer' else '' }}"
+                            href="{{ url_for('budgets.transfer') }}">💸 Przelew</a>
                     </li>
                 </ul>
                 {% endif %}
@@ -73,10 +73,10 @@
                         {{ current_user.nazwa_uzytkownika[0].upper() }}
                     </div>
                     <span class="text-white me-3">{{ current_user.nazwa_uzytkownika }}</span>
-                    <a href="{{ url_for('main.logout') }}" class="btn btn-outline-light btn-sm">Wyloguj</a>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm">Wyloguj</a>
                     {% else %}
-                    <a href="{{ url_for('main.login') }}" class="btn btn-light btn-sm me-2">Logowanie</a>
-                    <a href="{{ url_for('main.register') }}" class="btn btn-warning btn-sm">Rejestracja</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-sm me-2">Logowanie</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-warning btn-sm">Rejestracja</a>
                     {% endif %}
                 </div>
             </div>

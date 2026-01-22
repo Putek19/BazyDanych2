@@ -5,8 +5,23 @@
     <form method="POST">
         <div class="mb-3"><input type="text" name="name" class="form-control" placeholder="Imię" required></div>
         <div class="mb-3"><input type="email" name="email" class="form-control" placeholder="Email" required></div>
-        <div class="mb-3"><input type="password" name="password" class="form-control" placeholder="Hasło" required></div>
-        <div class="mb-3"><input type="text" name="household_name" class="form-control" placeholder="Nazwa Domu (np. Dom Nowaków)" required></div>
+        <div class="mb-3"><input type="password" name="password" class="form-control" placeholder="Hasło" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nazwa Domu</label>
+            <input type="text" name="household_name" class="form-control"
+                placeholder="np. Dom Nowaków (tylko gdy tworzysz nowy)">
+        </div>
+
+        <hr>
+        <p class="text-center text-muted">LUB DOŁĄCZ DO ISTNIEJĄCEGO</p>
+
+        <div class="mb-3">
+            <label class="form-label">Kod Zaproszenia</label>
+            <input type="text" name="invite_code" class="form-control"
+                placeholder="Wklej kod od domownika (opcjonalnie)">
+        </div>
+
         <button type="submit" class="btn btn-success w-100">Załóż konto</button>
     </form>
 </div>

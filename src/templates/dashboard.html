@@ -23,6 +23,11 @@
         </div>
 
         <div class="d-flex gap-2">
+            <!-- Przycisk Zaproszenia -->
+            <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#inviteModal">
+                👩‍❤️‍👨 Zaproś
+            </button>
+
             <div class="dropdown">
                 <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     Zmień budżet
@@ -31,7 +36,7 @@
                     {% for b in budgets %}
                     <li>
                         <a class="dropdown-item {% if active_budget and b.id == active_budget.id %}active{% endif %}"
-                            href="{{ url_for('main.switch_budget', budget_id=b.id) }}">
+                            href="{{ url_for('budgets.switch_budget', budget_id=b.id) }}">
                             {{ b.nazwa }}
                         </a>
                     </li>
@@ -53,12 +58,14 @@
     <div class="row mb-4">
         <div class="col-6">
             <!-- przekazanie z url z parammetrem dla poprawnej domyślnej wartości typu w add_transaction -->
-            <a href="{{ url_for('main.add_transaction', typ='Wydatek') }}" class="btn btn-danger w-100 p-3 shadow-sm">
+            <a href="{{ url_for('transactions.add_transaction', typ='Wydatek') }}"
+                class="btn btn-danger w-100 p-3 shadow-sm">
                 ➖ Dodaj Wydatek
             </a>
         </div>
         <div class="col-6">
-            <a href="{{ url_for('main.add_transaction', typ='Wplyw') }}" class="btn btn-success w-100 p-3 shadow-sm">
+            <a href="{{ url_for('transactions.add_transaction', typ='Wplyw') }}"
+                class="btn btn-success w-100 p-3 shadow-sm">
                 ➕ Dodaj Wpływ
             </a>
         </div>
@@ -91,7 +98,7 @@
 
 <div class="modal fade" id="addBudgetModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" action="{{ url_for('main.add_budget') }}">
+        <form method="POST" action="{{ url_for('budgets.add_budget') }}">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Nowy Budżet Wydzielony</h5>
@@ -110,6 +117,26 @@
                 </div>
             </div>
         </form>
+    </div>
+</div>
+<div class="modal fade" id="inviteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Zaproś domownika</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Udostępnij ten kod domownikowi, aby dołączył do Twojego gospodarstwa:</p>
+                <div class="alert alert-secondary fs-4 text-break user-select-all">
+                    {{ invite_code }}
+                </div>
+                <small class="text-muted">Kod jest ważny i unikalny dla Twojego gospodarstwa.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

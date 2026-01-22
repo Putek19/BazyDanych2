@@ -24,9 +24,17 @@ def create_app():
 
 
     from . import models
-    from . import routes
+    from .blueprints import auth
+    from .blueprints import main
+    from .blueprints import transactions
+    from .blueprints import budgets
+    from .blueprints import categories
 
-    app.register_blueprint(routes.bp)
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(main.bp)
+    app.register_blueprint(transactions.bp)
+    app.register_blueprint(budgets.bp)
+    app.register_blueprint(categories.bp)
 
 
     from .models import User

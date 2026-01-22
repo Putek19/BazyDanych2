@@ -29,25 +29,26 @@
                 <td>
                     {% if t.kategoria.nazwa in ['Przelew Wychodzący', 'Przelew Przychodzący'] %}
 
-                        <span class="text-muted" title="To jest przelew automatyczny. Nie można go edytować ani usunąć, aby zachować spójność salda.">
-                            🔒 <small>Przelew</small>
-                        </span>
+                    <span class="text-muted"
+                        title="To jest przelew automatyczny. Nie można go edytować ani usunąć, aby zachować spójność salda.">
+                        🔒 <small>Przelew</small>
+                    </span>
 
                     {% else %}
 
-                        <div class="btn-group btn-group-sm" role="group">
-                            <a href="{{ url_for('main.edit_transaction', t_id=t.id) }}"
-                                class="btn btn-outline-primary" title="Edytuj">
-                                ✏️
-                            </a>
-                            <form action="{{ url_for('main.delete_transaction', t_id=t.id) }}" method="POST"
-                                onsubmit="return confirm('Czy na pewno chcesz usunąć tę transakcję?');"
-                                style="display:inline;">
-                                <button type="submit" class="btn btn-outline-danger" title="Usuń">
-                                    🗑️
-                                </button>
-                            </form>
-                        </div>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('transactions.edit_transaction', t_id=t.id) }}"
+                            class="btn btn-outline-primary" title="Edytuj">
+                            ✏️
+                        </a>
+                        <form action="{{ url_for('transactions.delete_transaction', t_id=t.id) }}" method="POST"
+                            onsubmit="return confirm('Czy na pewno chcesz usunąć tę transakcję?');"
+                            style="display:inline;">
+                            <button type="submit" class="btn btn-outline-danger" title="Usuń">
+                                🗑️
+                            </button>
+                        </form>
+                    </div>
 
                     {% endif %}
                 </td>

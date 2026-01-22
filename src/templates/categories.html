@@ -44,12 +44,12 @@
                                 <td><span class="badge bg-danger rounded-pill">Wydatek</span></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ url_for('main.edit_category', c_id=cat.id) }}"
+                                        <a href="{{ url_for('categories.edit_category', c_id=cat.id) }}"
                                             class="btn btn-outline-primary" title="Edytuj">
                                             ✏️
                                         </a>
-                                        <form action="{{ url_for('main.delete_category', c_id=cat.id) }}" method="POST"
-                                            style="display:inline;"
+                                        <form action="{{ url_for('categories.delete_category', c_id=cat.id) }}"
+                                            method="POST" style="display:inline;"
                                             onsubmit="return confirm('Czy na pewno chcesz usunąć tę kategorię?');">
                                             <button type="submit" class="btn btn-outline-danger" title="Usuń">
                                                 🗑️
@@ -89,12 +89,12 @@
                                 <td><span class="badge bg-success rounded-pill">Wpływ</span></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ url_for('main.edit_category', c_id=cat.id) }}"
+                                        <a href="{{ url_for('categories.edit_category', c_id=cat.id) }}"
                                             class="btn btn-outline-primary" title="Edytuj">
                                             ✏️
                                         </a>
-                                        <form action="{{ url_for('main.delete_category', c_id=cat.id) }}" method="POST"
-                                            style="display:inline;"
+                                        <form action="{{ url_for('categories.delete_category', c_id=cat.id) }}"
+                                            method="POST" style="display:inline;"
                                             onsubmit="return confirm('Czy na pewno chcesz usunąć tę kategorię?');">
                                             <button type="submit" class="btn btn-outline-danger" title="Usuń">
                                                 🗑️
@@ -121,7 +121,7 @@
 
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <form method="POST" action="{{ url_for('main.categories') }}">
+        <form method="POST" action="{{ url_for('categories.categories') }}">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Nowa Kategoria</h5>

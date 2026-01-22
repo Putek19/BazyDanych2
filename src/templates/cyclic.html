@@ -81,11 +81,11 @@
                     <td>{{ c.data_startu.strftime('%d dnia m-ca') }}</td>
                     <td>
                         <div class="btn-group btn-group-sm" role="group">
-                            <a href="{{ url_for('main.edit_cyclic', cyclic_id=c.id) }}" class="btn btn-outline-warning"
-                                title="Edytuj">
+                            <a href="{{ url_for('transactions.edit_cyclic', cyclic_id=c.id) }}"
+                                class="btn btn-outline-warning" title="Edytuj">
                                 ✏️
                             </a>
-                            <form action="{{ url_for('main.delete_cyclic', cyclic_id=c.id) }}" method="POST"
+                            <form action="{{ url_for('transactions.delete_cyclic', cyclic_id=c.id) }}" method="POST"
                                 onsubmit="return confirm('Czy na pewno chcesz usunąć tę płatność cykliczną?');"
                                 style="display:inline;">
                                 <button type="submit" class="btn btn-outline-danger" title="Usuń">
